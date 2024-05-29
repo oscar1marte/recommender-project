@@ -1,0 +1,188 @@
+- snowfakery_version: 3
+
+- var: business_revenue_var
+  value:
+    random_choice: ["${{random_number(1000000,10000000)}}", "${{random_number(10000001,100000000)}}", "${{random_number(100000001,1000000000)}}"]
+- var: account_source_var
+  value:
+    random_choice:
+      - Industry Conferences
+      - Networking Events
+      - Investment Banks
+      - Business Brokers
+      - Direct Referrals
+      - Incubator/Accelerator Programs
+- var: business_type
+  value:
+    if:
+      - choice:
+        when: ${{business_revenue_var < 10000000}}
+        pick: "Startup"
+      - choice:
+        when: ${{business_revenue_var < 50000000}}
+        pick: "Growth Stage"
+      - choice:
+        pick: "Established"
+- var: founded_year
+  value:
+    if:
+      - choice:
+        when: ${{business_type == "Startup"}}
+        pick: ${{fake.DateBetween(date("2022"), date("2024"))}}
+      - choice:
+        when: ${{business_type == "Growth Stage"}}
+        pick: ${{fake.DateBetween(date("2011"), date("2021"))}}
+      - choice:
+        pick: ${{fake.DateBetween(date("2000"), date("2010"))}}
+- var: owner_intent_to_sell
+  value:
+    if:
+      - choice:
+        when: ${{business_type == 'Startup'}}
+        pick: ${{fake.Pybool(truth_probability=80)}}
+      - choice:
+        when: ${{business_type == 'Growth Stage'}}
+        pick: ${{fake.Pybool(truth_probability=50)}}
+      - choice:
+        pick: ${{fake.Pybool(truth_probability=20)}}
+- var: opportunity_name
+  value:   
+      if:
+        - choice:
+          when: "${{owner_intent_to_sell == True}}"
+          pick:
+            random_choice:
+              "Investment": 20
+              "Acquisition": 80
+        - choice:
+          when: "${{owner_intent_to_sell == False}}"
+          pick:
+            random_choice:
+              "Investment": 80
+              "Acquisition": 20
+- var: current_stage_opp_var
+  value:
+    if:
+      - choice:
+        when: ${{owner_intent_to_sell == True and opportunity_name == 'Acquisition'}}
+        pick:
+          random_choice:
+            "Closed Won": 70
+            "Closed Lost": 30
+      - choice:
+        when: ${{owner_intent_to_sell == True and opportunity_name == 'Investment'}}
+        pick:
+          random_choice:
+            "Closed Won": 50
+            "Closed Lost": 50
+      - choice:
+        when: ${{owner_intent_to_sell == False and opportunity_name == 'Acquisition'}}
+        pick:
+          random_choice:
+            "Closed Won": 30
+            "Closed Lost": 70
+      - choice:
+        when: ${{owner_intent_to_sell == False and opportunity_name == 'Investment'}}
+        pick:
+          random_choice:
+            "Closed Won": 70
+            "Closed Lost": 30
+- var: total_funding_to_date
+  value: ${{business_revenue_var * random_number(50, 150) / 100}}
+- var: growth_rate
+  value: ${{random_number(0, 300)}}
+
+- object: Account
+  count: 1
+  fields:
+    AccountSource: ${{account_source_var}}
+    AnnualRevenue: ${{business_revenue_var}}
+    BillingCity: ${{fake.city}}
+    BillingCountry: "United States"
+    BillingLatitude: ${{fake.latitude}}
+    BillingLongitude: ${{fake.longitude}}
+    BillingPostalCode: ${{fake.postcode}}
+    BillingState:
+      random_choice: ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", 
+    "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", 
+    "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", 
+    "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", 
+    "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", 
+    "New Hampshire", "New Jersey", "New Mexico", "New York", 
+    "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", 
+    "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", 
+    "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", 
+    "West Virginia", "Wisconsin", "Wyoming"] 
+    BillingStreet: ${{fake.street_address}}
+    Description: ${{fake.paragraph}}
+    Fax: ${{fake.phone_number}}
+    Industry:
+      random_choice:
+        - Agriculture
+        - Apparel
+        - Banking
+        - Biotechnology
+        - Chemicals
+        - Communications
+        - Construction
+        - Consulting
+        - Education
+        - Electronics
+        - Energy
+        - Engineering
+        - Entertainment
+        - Environmental
+        - Finance
+        - Food & Beverage
+        - Government
+        - Healthcare
+        - Hospitality
+        - Insurance
+        - Machinery
+        - Manufacturing
+        - Media
+        - Not For Profit
+        - Other
+        - Recreation
+        - Retail
+        - Shipping
+        - Technology
+        - Telecommunications
+        - Transportation
+        - Utilities
+    Name: 
+      random_choice: ["${{fake.company}} Holdings", "${{fake.company}} Corporation", "${{fake.company}} Industries", "${{fake.company}} Enterprises"]
+    NumberOfEmployees: ${{ (((business_revenue_var * 0.000005) // 1) + (1 if (business_revenue_var * 0.000005) % 1 > 0 else 0))|int }}
+    Ownership:
+      random_choice: ["Private", "Public", "Subsidiary"]
+    Phone: ${{fake.phone_number}}
+    Rating:
+      if: 
+        - choice:
+          when: ${{current_stage_opp_var == 'Closed Won'}}
+          pick:
+            random_choice:
+              "Hot": 54%
+              "Warm": 33%
+              "Cold": 13%
+        - choice:
+          when: ${{current_stage_opp_var == 'Closed Lost'}}
+          pick:
+            random_choice:
+              "Hot": 13%
+              "Warm": 33%
+              "Cold": 54%
+        - choice:
+          pick:
+            random_choice: ["Hot", "Cold", "Warm"]
+    Site:
+      random_choice: "${{BillingCity}}"
+    TickerSymbol: ${{fake.RandomUppercaseLetter}}${{fake.RandomUppercaseLetter}}${{fake.RandomUppercaseLetter}}
+    Type: ${{business_type}}
+    Website:
+      fake: url
+    YearStarted: ${{founded_year.strftime("%Y")}}
+    Owner_Intent_To_Sell__c: ${{owner_intent_to_sell}}
+    Total_Funding_To_Date__c: ${{total_funding_to_date}}
+    HQ_Location__c: ${{BillingState}}
+    Growth_Rate__c: ${{growth_rate}}
